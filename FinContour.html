@@ -19,8 +19,8 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2re
 .bsub{font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:0.5px;text-transform:uppercase}
 .hinfo{font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;gap:16px;align-items:center}
 .hinfo span{color:var(--text2)}
-.app{display:grid;grid-template-columns:295px 1fr;min-height:calc(100vh - 56px)}
-aside{background:var(--bg2);border-right:1px solid var(--border);padding:1.25rem;display:flex;flex-direction:column;gap:1.1rem;overflow-y:auto}
+.app{display:grid;grid-template-columns:295px 1fr;height:calc(100vh - 56px);overflow:hidden}
+aside{background:var(--bg2);border-right:1px solid var(--border);padding:1.25rem;display:flex;flex-direction:column;gap:1.1rem;overflow-y:auto;height:100%}
 .slabel{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:1px}
 .ss{display:flex;flex-direction:column;gap:6px}
 .mtoggle{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
@@ -51,7 +51,7 @@ input.fi::placeholder{color:var(--text3)}
 .backbtn{background:var(--surface);color:var(--text2);border:1px solid var(--border2);padding:6px 12px;border-radius:var(--r);font-family:var(--mono);font-size:11px;cursor:pointer;display:none;align-items:center;gap:6px;transition:all .15s;white-space:nowrap;flex-shrink:0}
 .backbtn:hover{border-color:var(--accent);color:var(--accent)}
 .backbtn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-main{display:flex;flex-direction:column;overflow:hidden}
+main{display:flex;flex-direction:column;overflow:hidden;min-height:0}
 .toolbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
 .tl{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
 .ttitle{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -81,7 +81,7 @@ main{display:flex;flex-direction:column;overflow:hidden}
 .tab{padding:9px 16px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;font-family:var(--mono);letter-spacing:.3px}
 .tab:hover{color:var(--text2)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.twrap{flex:1;overflow:auto}
+.twrap{flex:1;overflow:auto;min-height:0}
 table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 thead{position:sticky;top:0;z-index:10}
 thead th{background:var(--bg3);color:var(--text2);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.6px;font-weight:500;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);border-right:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -165,6 +165,32 @@ tbody td:first-child{color:var(--text);font-weight:500}
 ::-webkit-scrollbar-track{background:var(--bg2)}
 ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+
+/* ===== FLOW MAP ===== */
+.flow-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;background:var(--bg)}
+.flow-toolbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 1.5rem;display:flex;align-items:center;gap:14px;flex-shrink:0;flex-wrap:wrap}
+.flow-toolbar .ft-label{font-family:var(--mono);font-size:11px;color:var(--text3);white-space:nowrap}
+.flow-toolbar select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:var(--r);font-family:var(--mono);font-size:11px;cursor:pointer;appearance:none}
+.flow-toolbar select:focus{outline:none;border-color:var(--accent)}
+.flow-toolbar select option{background:var(--bg3)}
+.ftbtn{background:var(--surface);border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:var(--r);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.ftbtn:hover{border-color:var(--accent);color:var(--accent)}
+.ftbtn.active{background:var(--accent);color:white;border-color:var(--accent)}
+.flow-canvas-wrap{flex:1;overflow:hidden;position:relative;user-select:none}
+#flowCanvas{width:100%;height:100%;display:block;cursor:grab}
+#flowCanvas.dragging{cursor:grabbing}
+/* Node tooltip */
+.flow-tip{position:fixed;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--text);pointer-events:none;z-index:999;opacity:0;transition:opacity .15s;max-width:260px;line-height:1.8;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.flow-tip.show{opacity:1}
+.flow-tip .ft-head{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:5px}
+.flow-tip .ft-row{display:flex;justify-content:space-between;gap:16px}
+.flow-tip .ft-key{color:var(--text3)}
+.flow-tip .ft-val{color:var(--text);text-align:right}
+/* Legend */
+.flow-legend{position:absolute;bottom:16px;left:1.5rem;display:flex;gap:14px;flex-wrap:wrap}
+.fl-item{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--text3)}
+.fl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+
 .toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 16px;border-radius:var(--r);font-size:12px;font-family:var(--mono);z-index:999;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.success{border-color:rgba(52,211,153,.4);color:var(--green)}
@@ -271,6 +297,7 @@ tbody td:first-child{color:var(--text);font-weight:500}
     <div class="tab" onclick="swTab('буау',this)">БУАУ / Касса</div>
     <div class="tab" onclick="swTab('кнт',this)">Контроль</div>
     <div class="tab" id="ytab" style="display:none" onclick="swTab('год',this)">Динамика за год</div>
+    <div class="tab" onclick="swTab('поток',this)">🗺 Карта потоков</div>
   </div>
   <div class="twrap" id="twrap">
     <div class="sbox"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
@@ -573,6 +600,7 @@ function swTab(tab,el){
   else{const lbl=tabLabel(tab);document.querySelectorAll('.tab').forEach(t=>{if(t.textContent.trim()===lbl)t.classList.add('active');});}
   if(!S.loaded)return;
   if(tab==='год'){renderYear();return;}
+  if(tab==='поток'){renderFlow();return;}
   S.flt=[...(S.data[tab]||[])];
   document.getElementById('tsearch').value='';
   renderTbl(tab,S.flt);
@@ -1240,6 +1268,532 @@ async function injectChartAndSave(wb,fl){
     showT('Excel сохранён (диаграмма: '+err.message+')','success');
   }
 }
+
+
+// ===== FLOW MAP — полная перезапись =====
+
+// Цвета уровней
+const FC = {
+  col: ['#f59e0b','#3b82f6','#10b981','#ec4899'],
+  colDim: ['rgba(245,158,11,.16)','rgba(59,130,246,.16)','rgba(16,185,129,.13)','rgba(236,72,153,.13)'],
+  link: ['rgba(245,158,11,.25)','rgba(59,130,246,.22)','rgba(16,185,129,.18)','rgba(236,72,153,.14)'],
+  linkHov: ['rgba(245,158,11,.8)','rgba(59,130,246,.8)','rgba(16,185,129,.75)','rgba(236,72,153,.75)'],
+  colNames: ['Источник финансирования','Бюджет / ПБС','Программа (КЦСР)','Тип закупки (КВР)']
+};
+
+const FS = {pan:{x:0,y:0}, scale:1, drag:null, hovered:null, clicked:null,
+            graph:null, mode:'lim'}; // mode: lim | kas | both
+
+// ─── строим граф из данных ─────────────────────────────────────────────────
+function buildFlowGraph(){
+  const srcFilter = (document.getElementById('flowSrc')||{value:'all'}).value;
+  const mode = FS.mode; // 'lim' | 'kas' | 'both'
+
+  // Используем загруженные данные или полный датасет
+  const allR = S.loaded ? S.data.рчб : RCHB_ALL;
+  const allB = S.loaded ? S.data.буау : BUAU_ALL;
+
+  // Фильтр по источнику — сравниваем в нижнем регистре с обеих сторон
+  const srcMap = {fed:'федеральные', reg:'региональные', mun:'муниципальные'};
+  const filtR = srcFilter==='all' ? allR
+    : allR.filter(r=>(r.source||'').toLowerCase().includes(srcMap[srcFilter]||''));
+
+  // ── Level 0: источники ──────────────────────────────────
+  const srcIndex = {};
+  filtR.forEach(r=>{
+    const key = r.source||'Региональные средства';
+    const shortKey = key.replace(' средства','');
+    if(!srcIndex[key]) srcIndex[key] = {
+      id: 'S_'+Object.keys(srcIndex).length,
+      label: shortKey, col:0,
+      type: key.includes('Федер')?0 : key.includes('Муниц')?2 : 1,
+      lim:0, kas:0
+    };
+    srcIndex[key].lim += pm(r.limity);
+    srcIndex[key].kas += pm(r.vyb);
+  });
+
+  // ── Level 1: бюджеты ────────────────────────────────────
+  const bgtIndex = {};
+  filtR.forEach(r=>{
+    const key = r.budget||'—';
+    if(!bgtIndex[key]) bgtIndex[key] = {
+      id: 'B_'+Object.keys(bgtIndex).length,
+      label: key.length>30 ? key.slice(0,28)+'…' : key,
+      fullLabel: key, col:1, lim:0, kas:0, bo:0
+    };
+    bgtIndex[key].lim += pm(r.limity);
+    bgtIndex[key].kas += pm(r.vyb);
+    bgtIndex[key].bo  += pm(r.bo);
+  });
+  // Добавляем касс из BUAU по бюджету
+  allB.forEach(b=>{
+    const key = b.budget||'—';
+    if(bgtIndex[key]) bgtIndex[key].kas += pm(b.vyplaty);
+  });
+
+  // ── Level 2: программы КЦСР ─────────────────────────────
+  const prgIndex = {};
+  filtR.forEach(r=>{
+    const pk = (r.kcsr||'').slice(0,7);
+    if(!prgIndex[pk]) prgIndex[pk] = {
+      id: 'P_'+Object.keys(prgIndex).length,
+      label: (r.name_kcsr||pk).length>32 ? (r.name_kcsr||pk).slice(0,30)+'…' : (r.name_kcsr||pk),
+      fullLabel: r.name_kcsr||pk, kcsr: pk, col:2, lim:0, kas:0, count:0
+    };
+    prgIndex[pk].lim += pm(r.limity);
+    prgIndex[pk].kas += pm(r.vyb);
+    prgIndex[pk].count++;
+  });
+
+  // ── Level 3: КВР ────────────────────────────────────────
+  const kvrIndex = {};
+  filtR.forEach(r=>{
+    const key = r.kvr||'—';
+    const name = r.name_kvr||('КВР '+key);
+    if(!kvrIndex[key]) kvrIndex[key] = {
+      id: 'K_'+Object.keys(kvrIndex).length,
+      label: name.length>30 ? name.slice(0,28)+'…' : name,
+      fullLabel: name, kvr: key, col:3, lim:0, kas:0, count:0
+    };
+    kvrIndex[key].lim += pm(r.limity);
+    kvrIndex[key].kas += pm(r.vyb);
+    kvrIndex[key].count++;
+  });
+
+  // Сортируем по убыванию (по выбранному режиму)
+  const val = n => mode==='kas' ? n.kas : n.lim;
+  const srcArr = Object.values(srcIndex).sort((a,b)=>val(b)-val(a));
+  const bgtArr = Object.values(bgtIndex).sort((a,b)=>val(b)-val(a)).slice(0,9);
+  const prgArr = Object.values(prgIndex).sort((a,b)=>val(b)-val(a)).slice(0,9);
+  const kvrArr = Object.values(kvrIndex).sort((a,b)=>val(b)-val(a)).slice(0,8);
+
+  const nodes = [...srcArr,...bgtArr,...prgArr,...kvrArr];
+
+  // ── Строим связи ─────────────────────────────────────────
+  const links = [];
+
+  function addLink(srcId, tgtId, limVal, kasVal, col){
+    const ex = links.find(l=>l.src===srcId&&l.tgt===tgtId);
+    if(ex){ ex.lim+=limVal; ex.kas+=kasVal; }
+    else links.push({src:srcId, tgt:tgtId, lim:limVal, kas:kasVal, col});
+  }
+
+  // Строим Set из id видимых узлов для быстрой проверки
+  const bgtSet = new Set(bgtArr.map(n=>n.id));
+  const prgSet = new Set(prgArr.map(n=>n.id));
+  const kvrSet = new Set(kvrArr.map(n=>n.id));
+  const srcSet = new Set(srcArr.map(n=>n.id));
+
+  // src → budget
+  filtR.forEach(r=>{
+    const sKey = r.source||'Региональные средства';
+    const sNode = srcIndex[sKey];
+    const bNode = bgtIndex[r.budget||'—'];
+    if(sNode && bNode && srcSet.has(sNode.id) && bgtSet.has(bNode.id))
+      addLink(sNode.id, bNode.id, pm(r.limity), pm(r.vyb), 0);
+  });
+
+  // budget → program
+  filtR.forEach(r=>{
+    const bNode = bgtIndex[r.budget||'—'];
+    const pk = (r.kcsr||'').slice(0,7);
+    const pNode = prgIndex[pk];
+    if(bNode && pNode && bgtSet.has(bNode.id) && prgSet.has(pNode.id))
+      addLink(bNode.id, pNode.id, pm(r.limity), pm(r.vyb), 1);
+  });
+
+  // program → kvr
+  filtR.forEach(r=>{
+    const pk = (r.kcsr||'').slice(0,7);
+    const pNode = prgIndex[pk];
+    const kNode = kvrIndex[r.kvr||'—'];
+    if(pNode && kNode && prgSet.has(pNode.id) && kvrSet.has(kNode.id))
+      addLink(pNode.id, kNode.id, pm(r.limity), pm(r.vyb), 2);
+  });
+
+  return {nodes, links, srcArr, bgtArr, prgArr, kvrArr};
+}
+
+// ─── рендер вкладки ───────────────────────────────────────────────────────
+function renderFlow(){
+  const w = document.getElementById('twrap');
+  document.getElementById('pgn').style.display = 'none';
+
+  // Растягиваем twrap на весь экран минус header+toolbar+krow+tabs
+  w.style.cssText = 'flex:1;overflow:hidden;display:flex;flex-direction:column;height:100%';
+
+  w.innerHTML = `
+<div style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--bg)">
+  <div class="flow-toolbar">
+    <span class="ft-label">Источник:</span>
+    <select id="flowSrc" onchange="rebuildFlow()">
+      <option value="all">Все источники</option>
+      <option value="fed">Федеральные</option>
+      <option value="reg">Региональные</option>
+      <option value="mun">Муниципальные</option>
+    </select>
+    <span class="ft-label" style="margin-left:8px">Показать:</span>
+    <button class="ftbtn active" id="fmLim" onclick="setFM('lim',this)">Лимиты</button>
+    <button class="ftbtn" id="fmKas" onclick="setFM('kas',this)">Касса</button>
+    <button class="ftbtn" id="fmBoth" onclick="setFM('both',this)">Оба</button>
+    <span style="flex:1"></span>
+    <span id="flowStats" style="font-family:var(--mono);font-size:10px;color:var(--text3)"></span>
+    <button class="ftbtn" onclick="FS.scale=Math.min(FS.scale*1.2,4);drawFlow()">＋</button>
+    <button class="ftbtn" onclick="FS.scale=Math.max(FS.scale/1.2,0.2);drawFlow()">−</button>
+    <button class="ftbtn" onclick="FS.pan={x:0,y:0};FS.scale=1;drawFlow()">⟲ Сброс</button>
+  </div>
+  <div id="flowCanvasWrap" style="flex:1;overflow:hidden;position:relative;user-select:none;min-height:0">
+    <canvas id="flowCanvas" style="width:100%;height:100%;display:block;cursor:grab"></canvas>
+    <div class="flow-legend">
+      <div class="fl-item"><div class="fl-dot" style="background:#f59e0b"></div>Источник финансирования</div>
+      <div class="fl-item"><div class="fl-dot" style="background:#3b82f6"></div>Бюджет / ПБС</div>
+      <div class="fl-item"><div class="fl-dot" style="background:#10b981"></div>Программа КЦСР</div>
+      <div class="fl-item"><div class="fl-dot" style="background:#ec4899"></div>Тип закупки КВР</div>
+      <div class="fl-item" style="margin-left:12px;color:var(--text3);font-size:9px">🖱 Перетащить · Колесо — зум · Клик — выделить</div>
+    </div>
+  </div>
+</div>
+<div class="flow-tip" id="flowTip"></div>`;
+
+  setTimeout(initFlowCanvas, 60);
+}
+
+function setFM(m, btn){
+  FS.mode = m;
+  document.querySelectorAll('#fmLim,#fmKas,#fmBoth').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  rebuildFlow();
+}
+
+function rebuildFlow(){
+  FS.graph = buildFlowGraph();
+  FS.hovered = null; FS.clicked = null;
+  updateFlowStats();
+  drawFlow();
+}
+
+function updateFlowStats(){
+  const el = document.getElementById('flowStats');
+  if(!el||!FS.graph) return;
+  const g = FS.graph;
+  const totLim = g.srcArr.reduce((s,n)=>s+n.lim,0);
+  const totKas = g.srcArr.reduce((s,n)=>s+n.kas,0);
+  el.textContent = `Лимиты: ${fb(totLim)} · Касса: ${fb(totKas)} · Узлов: ${g.nodes.length} · Связей: ${g.links.length}`;
+}
+
+function initFlowCanvas(){
+  const wrap = document.getElementById('flowCanvasWrap');
+  const cv   = document.getElementById('flowCanvas');
+  if(!cv||!wrap) return;
+
+  const resize = ()=>{
+    cv.width  = wrap.clientWidth;
+    cv.height = wrap.clientHeight;
+    drawFlow();
+  };
+  resize();
+  new ResizeObserver(resize).observe(wrap);
+
+  cv.addEventListener('mousedown', e=>{
+    FS.drag = {x: e.clientX - FS.pan.x, y: e.clientY - FS.pan.y};
+    cv.style.cursor = 'grabbing';
+  });
+  cv.addEventListener('mousemove', e=>{
+    if(FS.drag){
+      FS.pan.x = e.clientX - FS.drag.x;
+      FS.pan.y = e.clientY - FS.drag.y;
+      drawFlow();
+    } else {
+      flowHover(e, cv);
+    }
+  });
+  cv.addEventListener('mouseup',  ()=>{ FS.drag=null; cv.style.cursor='grab'; });
+  cv.addEventListener('mouseleave',()=>{ FS.drag=null; cv.style.cursor='grab'; hideFT(); });
+  cv.addEventListener('wheel', e=>{
+    e.preventDefault();
+    const f = e.deltaY < 0 ? 1.13 : 0.88;
+    const rect = cv.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    FS.pan.x = mx - (mx - FS.pan.x)*f;
+    FS.pan.y = my - (my - FS.pan.y)*f;
+    FS.scale = Math.max(0.18, Math.min(5, FS.scale*f));
+    drawFlow();
+  },{passive:false});
+  cv.addEventListener('click', e=>{
+    const rect = cv.getBoundingClientRect();
+    const w = sw2w(e.clientX-rect.left, e.clientY-rect.top);
+    const hit = (FS.graph||{nodes:[]}).nodes.find(n=>
+      w.x>=n.wx && w.x<=n.wx+n.ww && w.y>=n.wy && w.y<=n.wy+n.wh);
+    FS.clicked = (hit && hit===FS.clicked) ? null : (hit||null);
+    drawFlow();
+  });
+
+  FS.graph = buildFlowGraph();
+  updateFlowStats();
+
+  // Auto-fit
+  FS.pan = {x: 0, y: 20};
+  FS.scale = 1;
+  drawFlow();
+}
+
+function w2s(x,y){ return {x: x*FS.scale+FS.pan.x, y: y*FS.scale+FS.pan.y}; }
+function sw2w(x,y){ return {x: (x-FS.pan.x)/FS.scale, y: (y-FS.pan.y)/FS.scale}; }
+
+// ─── отрисовка ────────────────────────────────────────────────────────────
+function drawFlow(){
+  const cv = document.getElementById('flowCanvas');
+  if(!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Фон + сетка
+  ctx.fillStyle = '#0b0f1a';
+  ctx.fillRect(0,0,W,H);
+  const gs = 42*FS.scale;
+  const ox = ((FS.pan.x%gs)+gs)%gs, oy = ((FS.pan.y%gs)+gs)%gs;
+  ctx.strokeStyle = 'rgba(80,110,180,0.05)';
+  ctx.lineWidth = 1;
+  for(let x=ox-gs; x<W+gs; x+=gs){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke(); }
+  for(let y=oy-gs; y<H+gs; y+=gs){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke(); }
+
+  if(!FS.graph) return;
+  const {nodes, links} = FS.graph;
+
+  // ── Раскладка узлов ───────────────────────────────────────
+  const COLS = 4;
+  // Мировое пространство: ширина ~1600px независимо от масштаба
+  const worldW = Math.max(1400, W/FS.scale);
+  const colW   = worldW / COLS;
+  const nodeW  = Math.min(220, colW*0.62);
+  const nodeH  = 42;
+  const padTop = 55;
+  const padBot = 30;
+
+  const colNodes = [0,1,2,3].map(c => nodes.filter(n=>n.col===c));
+  const maxN = Math.max(...colNodes.map(a=>a.length), 1);
+  const worldH = Math.max(600, H/FS.scale - padTop - padBot);
+  const minSpacing = nodeH + 14;
+
+  colNodes.forEach((arr, ci)=>{
+    const n = arr.length;
+    const spacing = n>1 ? Math.max(minSpacing, worldH/(n)) : worldH/2;
+    const startY  = n>1 ? padTop : padTop + worldH/2 - nodeH/2;
+    arr.forEach((node, ri)=>{
+      node.wx = ci*colW + (colW-nodeW)/2;
+      node.wy = n>1 ? padTop + ri*spacing : startY;
+      node.ww = nodeW;
+      node.wh = nodeH;
+    });
+  });
+
+  // Выбранный режим: lim / kas / both
+  const getV = n => FS.mode==='kas' ? n.kas
+                  : FS.mode==='both' ? (n.lim+n.kas)/2
+                  : n.lim;
+  const getLinkV = l => FS.mode==='kas' ? l.kas
+                       : FS.mode==='both' ? (l.lim+l.kas)/2
+                       : l.lim;
+
+  const maxLinkV = Math.max(...links.map(getLinkV), 1);
+
+  // ── Связи ─────────────────────────────────────────────────
+  // Сначала рисуем невыделенные (тусклее), потом выделенные
+  const activeId = FS.clicked ? FS.clicked.id : (FS.hovered ? FS.hovered.id : null);
+
+  const drawLink = (l, highlighted)=>{
+    const sn = nodes.find(n=>n.id===l.src);
+    const tn = nodes.find(n=>n.id===l.tgt);
+    if(!sn||!tn) return;
+
+    const lv = getLinkV(l);
+    if(lv<=0) return;
+
+    const sp = w2s(sn.wx+sn.ww, sn.wy+sn.wh/2);
+    const tp = w2s(tn.wx,        tn.wy+tn.wh/2);
+    const cpx = sp.x + (tp.x-sp.x)*0.5;
+
+    const maxLineW = Math.max(1.5, Math.min(28, (lv/maxLinkV)*26*FS.scale));
+    const linkCol = sn.col; // цвет по исходному узлу
+
+    if(highlighted){
+      ctx.strokeStyle = FC.linkHov[linkCol] || 'rgba(255,255,255,0.7)';
+      ctx.lineWidth   = Math.max(maxLineW, 3);
+    } else {
+      ctx.strokeStyle = FC.link[linkCol] || 'rgba(100,140,200,0.12)';
+      ctx.lineWidth   = maxLineW * 0.6;
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(sp.x, sp.y);
+    ctx.bezierCurveTo(cpx, sp.y, cpx, tp.y, tp.x, tp.y);
+    ctx.stroke();
+
+    // Стрелка
+    if(maxLineW > 2){
+      const aw = Math.max(5, Math.min(12, 7*FS.scale));
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.beginPath();
+      ctx.moveTo(tp.x, tp.y);
+      ctx.lineTo(tp.x-aw, tp.y-aw*0.45);
+      ctx.lineTo(tp.x-aw, tp.y+aw*0.45);
+      ctx.closePath();
+      ctx.fill();
+    }
+  };
+
+  // Два прохода: сначала тусклые, потом яркие
+  links.forEach(l=>{
+    const active = activeId && (l.src===activeId||l.tgt===activeId);
+    if(!active) drawLink(l, false);
+  });
+  links.forEach(l=>{
+    const active = activeId && (l.src===activeId||l.tgt===activeId);
+    if(active) drawLink(l, true);
+  });
+
+  // ── Узлы ──────────────────────────────────────────────────
+  nodes.forEach(n=>{
+    const sp = w2s(n.wx, n.wy);
+    const sw = n.ww*FS.scale, sh = n.wh*FS.scale;
+    const isHov  = FS.hovered && FS.hovered.id===n.id;
+    const isSel  = FS.clicked && FS.clicked.id===n.id;
+    const isConn = activeId && FS.graph.links.some(l=>
+      (l.src===activeId&&l.tgt===n.id)||(l.tgt===activeId&&l.src===n.id)||(l.src===n.id||l.tgt===n.id)&&n.id===activeId);
+    const dim = activeId && !isConn && !isSel && !isHov;
+    const col  = n.col;
+    const nc   = FC.col[col];
+
+    if(isHov||isSel){ ctx.shadowColor=nc; ctx.shadowBlur=16*FS.scale; }
+
+    // Фон
+    const grad = ctx.createLinearGradient(sp.x, sp.y, sp.x+sw, sp.y+sh);
+    if(isSel){
+      grad.addColorStop(0, nc+'55');
+      grad.addColorStop(1, nc+'22');
+    } else if(isHov){
+      grad.addColorStop(0, nc+'44');
+      grad.addColorStop(1, nc+'18');
+    } else {
+      grad.addColorStop(0, FC.colDim[col]);
+      grad.addColorStop(1, 'rgba(14,17,23,0.2)');
+    }
+    ctx.globalAlpha = dim ? 0.25 : 1;
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = (isHov||isSel) ? nc : 'rgba(100,140,200,0.2)';
+    ctx.lineWidth = (isHov||isSel) ? 2 : 1;
+    rrect(ctx, sp.x, sp.y, sw, sh, 7*FS.scale);
+    ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Левая плашка цвета
+    ctx.fillStyle = nc;
+    ctx.globalAlpha = dim ? 0.15 : 0.85;
+    rrect(ctx, sp.x, sp.y, 5*FS.scale, sh, 2.5*FS.scale);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+
+    // Текст
+    if(sw > 45){
+      const fontSize = Math.max(9, Math.min(13, 11*FS.scale));
+      ctx.font = `${fontSize}px 'IBM Plex Mono',monospace`;
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = dim ? 'rgba(200,220,255,0.3)' : (isHov||isSel ? '#ffffff' : '#cce0f5');
+      const textX = sp.x + 10*FS.scale;
+      const maxW  = sw - 14*FS.scale;
+      let label = n.label || n.id;
+      // Обрезаем если не помещается
+      while(label.length>3 && ctx.measureText(label).width > maxW)
+        label = label.slice(0,-2)+'…';
+      ctx.fillText(label, textX, sp.y+sh/2);
+    }
+
+    // Сумма справа
+    const dispVal = getV(n);
+    if(dispVal>0 && sw>90 && FS.scale>0.45){
+      const vs = fb(dispVal);
+      const fs2 = Math.max(7, Math.min(10, 9*FS.scale));
+      ctx.font = `${fs2}px 'IBM Plex Mono',monospace`;
+      ctx.fillStyle = dim ? 'rgba(100,140,200,0.2)' : 'rgba(160,200,240,0.7)';
+      const tw = ctx.measureText(vs).width;
+      ctx.fillText(vs, sp.x+sw-tw-6*FS.scale, sp.y+sh*0.72);
+    }
+  });
+
+  ctx.globalAlpha = 1;
+
+  // ── Заголовки колонок ─────────────────────────────────────
+  const colLabels = ['Источник финансирования','Бюджет / ПБС','Программы КЦСР','Типы закупок КВР'];
+  colLabels.forEach((lbl, ci)=>{
+    const cx = ci*colW + colW/2;
+    const sp = w2s(cx, padTop - 26);
+    const fs = Math.max(9, Math.min(13, 11*FS.scale));
+    ctx.font = `600 ${fs}px 'Source Sans 3',sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = FC.col[ci]+'cc';
+    ctx.fillText(lbl, sp.x, sp.y);
+
+    // Счётчик узлов
+    const cnt = colNodes[ci].length;
+    ctx.font = `${Math.max(8,fs-2)}px 'IBM Plex Mono',monospace`;
+    ctx.fillStyle = 'rgba(100,140,200,0.4)';
+    ctx.fillText(`(${cnt})`, sp.x, sp.y+fs+4);
+    ctx.textAlign = 'left';
+  });
+}
+
+function rrect(ctx,x,y,w,h,r){
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+function flowHover(e, cv){
+  if(!FS.graph) return;
+  const rect = cv.getBoundingClientRect();
+  const w = sw2w(e.clientX-rect.left, e.clientY-rect.top);
+  const hit = FS.graph.nodes.find(n=>
+    w.x>=n.wx && w.x<=n.wx+n.ww && w.y>=n.wy && w.y<=n.wy+n.wh);
+  if(hit !== FS.hovered){ FS.hovered = hit||null; drawFlow(); }
+  if(hit) showFT(hit, e.clientX, e.clientY);
+  else    hideFT();
+}
+
+function showFT(n, cx, cy){
+  const tip = document.getElementById('flowTip');
+  if(!tip) return;
+  const rows = [];
+  if(n.lim>0) rows.push(`<div class="ft-row"><span class="ft-key">Лимиты:</span><span class="ft-val" style="color:#3b82f6">${fb(n.lim)}</span></div>`);
+  if(n.kas>0) rows.push(`<div class="ft-row"><span class="ft-key">Касса:</span><span class="ft-val" style="color:#10b981">${fb(n.kas)}</span></div>`);
+  if(n.bo>0)  rows.push(`<div class="ft-row"><span class="ft-key">Подтв. БО:</span><span class="ft-val">${fb(n.bo)}</span></div>`);
+  if(n.count) rows.push(`<div class="ft-row"><span class="ft-key">Строк:</span><span class="ft-val">${n.count}</span></div>`);
+  if(n.kcsr)  rows.push(`<div class="ft-row"><span class="ft-key">КЦСР:</span><span class="ft-val">${n.kcsr}</span></div>`);
+  if(n.kvr)   rows.push(`<div class="ft-row"><span class="ft-key">КВР:</span><span class="ft-val">${n.kvr}</span></div>`);
+  const out = (FS.graph.links||[]).filter(l=>l.src===n.id).length;
+  const inp = (FS.graph.links||[]).filter(l=>l.tgt===n.id).length;
+  if(out) rows.push(`<div class="ft-row"><span class="ft-key">→ связей:</span><span class="ft-val">${out}</span></div>`);
+  if(inp) rows.push(`<div class="ft-row"><span class="ft-key">← связей:</span><span class="ft-val">${inp}</span></div>`);
+  const pct = n.lim>0 ? Math.round(n.kas/n.lim*100)+'%' : '—';
+  if(n.lim>0) rows.push(`<div class="ft-row"><span class="ft-key">% кассы:</span><span class="ft-val" style="color:#f59e0b">${pct}</span></div>`);
+
+  tip.innerHTML = `<div class="ft-head">${esc(n.fullLabel||n.label||n.id)}</div>
+    <div style="font-size:9px;color:var(--text3);margin-bottom:6px">${FC.colNames[n.col]||''}</div>
+    ${rows.join('')}`;
+  tip.classList.add('show');
+  const tx = Math.min(cx+18, window.innerWidth-290);
+  const ty = Math.min(cy-12, window.innerHeight-200);
+  tip.style.left = tx+'px';
+  tip.style.top  = ty+'px';
+}
+function hideFT(){ const t=document.getElementById('flowTip'); if(t) t.classList.remove('show'); }
 
 function showT(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');setTimeout(()=>t.className='toast',2600);}
 </script>
