@@ -195,6 +195,42 @@ tbody td:first-child{color:var(--text);font-weight:500}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.success{border-color:rgba(52,211,153,.4);color:var(--green)}
 .toast.error{border-color:rgba(248,113,113,.4);color:var(--red)}
+
+
+/* ===== SCENARIOS CSS ===== */
+.scenario-wrap{display:grid;grid-template-columns:320px 1fr;gap:0;height:100%;overflow:hidden}
+.scenario-left{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:1.25rem;display:flex;flex-direction:column;gap:1rem}
+.scenario-right{overflow-y:auto;padding:1.25rem;display:flex;flex-direction:column;gap:1rem}
+.wi-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem}
+.wi-section-title{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:.75rem;font-weight:600}
+.wi-desc{font-size:12px;color:var(--text3);margin-bottom:1rem;line-height:1.6}
+.wi-form{display:flex;flex-direction:column;gap:8px}
+.wi-row{display:flex;align-items:center;gap:10px}
+.wi-label{font-family:var(--mono);font-size:11px;color:var(--text3);width:88px;flex-shrink:0}
+.wi-select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:var(--r);font-family:var(--mono);font-size:11px;flex:1;cursor:pointer;appearance:none}
+.wi-select:focus{outline:none;border-color:var(--accent)}
+.wi-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;flex-shrink:0}
+.wi-kpi{background:var(--bg2);padding:12px 14px}
+.wi-kpi-label{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:3px}
+.wi-kpi-val{font-size:17px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.wi-kpi-delta{font-size:11px;font-family:var(--mono);margin-top:2px}
+.wi-kpi-delta.pos{color:var(--green)}.wi-kpi-delta.neg{color:var(--red)}.wi-kpi-delta.neu{color:var(--text3)}
+.wi-risk{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-radius:4px;margin-bottom:4px;font-size:12px}
+.wi-risk-icon{flex-shrink:0;font-size:14px}
+.wi-risk-text{color:var(--text2);line-height:1.5}
+.wi-risk-critical{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2)}
+.wi-risk-warn{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2)}
+.wi-risk-info{background:rgba(74,143,255,.07);border:1px solid rgba(74,143,255,.15)}
+.wi-risk-ok{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);color:var(--green)}
+.wi-saved-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.wi-saved-item:last-child{border-bottom:none}
+@media(max-width:768px){
+  .scenario-wrap{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .scenario-left{border-right:none;border-bottom:1px solid var(--border);max-height:50vh}
+  .wi-kpi-row{grid-template-columns:repeat(2,1fr)}
+}
+
+
 </style>
 </head>
 <body>
@@ -298,6 +334,7 @@ tbody td:first-child{color:var(--text);font-weight:500}
     <div class="tab" onclick="swTab('кнт',this)">Контроль</div>
     <div class="tab" id="ytab" style="display:none" onclick="swTab('год',this)">Динамика за год</div>
     <div class="tab" onclick="swTab('поток',this)">🗺 Карта потоков</div>
+    <div class="tab" onclick="swTab('сценарий',this)">⚡ Сценарии</div>
   </div>
   <div class="twrap" id="twrap">
     <div class="sbox"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
@@ -390,7 +427,7 @@ const BUAU_ALL=[
 const MRU=['','Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const MSH=['','Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
 
-const S={mode:'month',tab:'рчб',data:{рчб:[],сог:[],буау:[],кнт:[]},flt:[],pg:1,pp:100,loaded:false,viol:0,yd:null,navStack:[],cmpActive:false,cmpYr:'2025'};
+const S={mode:'month',tab:'рчб',data:{рчб:[],сог:[],буау:[],кнт:[]},flt:[],pg:1,pp:100,loaded:false,viol:0,yd:null,navStack:[],cmpActive:false,cmpYr:'2025',chartType:'bar'};
 let voiceRec=null,voiceActive=false;
 
 function pm(s){if(!s||s==='—')return 0;return parseFloat(String(s).replace(/\s/g,'').replace(',','.'))|| 0;}
@@ -408,26 +445,76 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-// ===== VOICE INPUT =====
+// ===== VOICE INPUT — кросс-браузерный =====
+// Уровни поддержки:
+// 1. Web Speech API (Chrome, Edge, Safari 14.1+)  
+// 2. MediaRecorder fallback — показывает ошибку с подсказкой
 function toggleVoice(){
-  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
-    showT('Голосовой ввод не поддерживается браузером','error');return;
-  }
   if(voiceActive){stopVoice();return;}
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  voiceRec=new SR();
-  voiceRec.lang='ru-RU';voiceRec.continuous=false;voiceRec.interimResults=true;
-  voiceRec.onstart=()=>{voiceActive=true;document.getElementById('voiceBtn').classList.add('recording');showT('Говорите...','');};
-  voiceRec.onresult=e=>{
-    const t=Array.from(e.results).map(r=>r[0].transcript).join('');
-    document.getElementById('tsearch').value=t;
-    fltTbl(t);
-  };
-  voiceRec.onend=()=>{stopVoice();};
-  voiceRec.onerror=()=>{stopVoice();showT('Ошибка голосового ввода','error');};
-  voiceRec.start();
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+           || window.mozSpeechRecognition || window.msSpeechRecognition;
+  if(SR){
+    // Нативный Web Speech API
+    try{
+      voiceRec = new SR();
+      voiceRec.lang = 'ru-RU';
+      voiceRec.continuous = false;
+      voiceRec.interimResults = false;
+      voiceRec.maxAlternatives = 1;
+      voiceRec.onstart = ()=>{
+        voiceActive = true;
+        document.getElementById('voiceBtn').classList.add('recording');
+        showT('🎤 Говорите...','');
+      };
+      voiceRec.onresult = e=>{
+        let interim='', final='';
+        for(let i=e.resultIndex;i<e.results.length;i++){
+          const t=e.results[i][0].transcript;
+          if(e.results[i].isFinal) final+=t; else interim+=t;
+        }
+        const text = (final||interim).trim();
+        if(text){
+          document.getElementById('tsearch').value = text;
+          fltTbl(text);
+        }
+      };
+      voiceRec.onerror = ev=>{
+        stopVoice();
+        const msgs = {
+          'not-allowed':'Доступ к микрофону запрещён. Разрешите в настройках браузера.',
+          'no-speech':'Речь не обнаружена. Попробуйте ещё раз.',
+          'network':'Ошибка сети. Проверьте подключение.',
+          'audio-capture':'Микрофон не найден.',
+        };
+        showT(msgs[ev.error]||'Ошибка распознавания: '+ev.error,'error');
+      };
+      voiceRec.onend = ()=>{ stopVoice(); };
+      voiceRec.start();
+    }catch(err){
+      stopVoice();
+      voiceFallback();
+    }
+  } else {
+    voiceFallback();
+  }
 }
-function stopVoice(){voiceActive=false;if(voiceRec){try{voiceRec.stop();}catch(e){}}document.getElementById('voiceBtn').classList.remove('recording');}
+
+function voiceFallback(){
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+  let hint = 'Голосовой ввод не поддерживается браузером.';
+  if(isFirefox) hint += ' Firefox: переключитесь на Chrome/Edge/Safari.';
+  else if(isSafari) hint += ' Safari: разрешите микрофон в настройках.';
+  else hint += ' Рекомендуется Chrome, Edge или Safari 14.1+.';
+  showT(hint, 'error');
+}
+
+function stopVoice(){
+  voiceActive = false;
+  if(voiceRec){ try{ voiceRec.stop(); }catch(e){} voiceRec=null; }
+  const btn = document.getElementById('voiceBtn');
+  if(btn) btn.classList.remove('recording');
+}
 
 // ===== TOOLTIP =====
 const TT=document.getElementById('chartTooltip');
@@ -601,6 +688,7 @@ function swTab(tab,el){
   if(!S.loaded)return;
   if(tab==='год'){renderYear();return;}
   if(tab==='поток'){renderFlow();return;}
+  if(tab==='сценарий'){renderScenario();return;}
   S.flt=[...(S.data[tab]||[])];
   document.getElementById('tsearch').value='';
   renderTbl(tab,S.flt);
@@ -612,6 +700,50 @@ function fltTbl(q){
   const ql=q.toLowerCase();
   S.flt=ql?rows.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(ql))):[...rows];
   S.pg=1;renderTbl(S.tab,S.flt);
+}
+
+function buildPieSVG(mosData, title, pieColors){
+  const pieData=mosData.filter(m=>m.vyb>0);
+  const pieTotal=pieData.reduce((s,m)=>s+m.vyb,0)||1;
+  const pcx=320,pcy=220,PR=140;
+  const PW=640,PH=420+Math.ceil(pieData.length/3)*26;
+  let svg=`<svg viewBox="0 0 ${PW} ${PH}" style="width:700px;max-width:700px;height:auto;display:block;margin:0 auto">`;
+  svg+=`<text x="${pcx}" y="15" text-anchor="middle" fill="#c8d8f0" font-size="10" font-family="'IBM Plex Mono',monospace" font-weight="600">${title}</text>`;
+  let slices='',labels='',startAngle=-Math.PI/2;
+  pieData.forEach((m,i)=>{
+    const slice=m.vyb/pieTotal;
+    const endA=startAngle+slice*Math.PI*2;
+    const large=slice>0.5?1:0;
+    const x1=(pcx+PR*Math.cos(startAngle)).toFixed(2),y1=(pcy+PR*Math.sin(startAngle)).toFixed(2);
+    const x2=(pcx+PR*Math.cos(endA)).toFixed(2),y2=(pcy+PR*Math.sin(endA)).toFixed(2);
+    const pct=Math.round(slice*100);
+    const col=pieColors[i%pieColors.length];
+    const mid=(startAngle+endA)/2;
+    const ttD=JSON.stringify({mo:m.mo,yr:title,val:m.vyb,label:'Касса',pct}).replace(/'/g,"&#39;");
+    slices+=`<path data-tt='${ttD}' d="M${pcx},${pcy} L${x1},${y1} A${PR},${PR} 0 ${large},1 ${x2},${y2} Z" fill="${col}" opacity="0.88" style="cursor:pointer;transition:opacity .12s" onmouseenter="this.style.opacity='1';barHover(event,this)" onmouseleave="this.style.opacity='0.88';hideTT()"/>`;
+    if(pct>=7){
+      const lx=(pcx+PR*0.63*Math.cos(mid)).toFixed(1),ly2=(pcy+PR*0.63*Math.sin(mid)).toFixed(1);
+      labels+=`<text x="${lx}" y="${ly2}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="8" font-family="'IBM Plex Mono',monospace" font-weight="bold" style="pointer-events:none">${pct}%</text>`;
+    }
+    startAngle=endA;
+  });
+  svg+=slices;
+  svg+=`<circle cx="${pcx}" cy="${pcy}" r="${(PR*0.44).toFixed(0)}" fill="#0e1117"/>`;
+  svg+=`<text x="${pcx}" y="${pcy-9}" text-anchor="middle" dominant-baseline="middle" fill="#60a5fa" font-size="10" font-family="'IBM Plex Mono',monospace">Касса</text>`;
+  svg+=`<text x="${pcx}" y="${pcy+2}" text-anchor="middle" dominant-baseline="middle" fill="#93c5fd" font-size="11" font-family="'IBM Plex Mono',monospace" font-weight="bold">${fb(pieTotal)}</text>`;
+  svg+=`<text x="${pcx}" y="${pcy+14}" text-anchor="middle" dominant-baseline="middle" fill="#3b82f6" font-size="8" font-family="'IBM Plex Mono',monospace">за год</text>`;
+  svg+=labels;
+  const legY0=pcy+PR+10,legColW=66,legPerRow=3;
+  pieData.forEach((m,i)=>{
+    const col=pieColors[i%pieColors.length];
+    const lx=(i%legPerRow)*legColW+(PW-legColW*legPerRow)/2;
+    const ly=legY0+Math.floor(i/legPerRow)*15;
+    const pct=Math.round(m.vyb/pieTotal*100);
+    svg+=`<rect x="${lx}" y="${ly}" width="7" height="7" rx="1" fill="${col}"/>`;
+    svg+=`<text x="${lx+10}" y="${ly+7}" fill="#8fa4c8" font-size="7" font-family="'IBM Plex Mono',monospace">${MRU[parseInt(m.mo)].slice(0,3)} ${pct}%</text>`;
+  });
+  svg+='</svg>';
+  return svg;
 }
 
 // ===== YEAR VIEW with COMPARISON =====
@@ -627,8 +759,8 @@ function renderYear(){
   const cmpData=S.cmpActive?buildYDFor(cmpYr):null;
 
   // Chart metrics: pick which series to show
-  const H=200,padL=48,padB=38,top=24;
-  const bw=16,grpGap=8,seriesGap=3;
+  const H=100,padL=34,padB=22,top=14;
+  const bw=9,grpGap=5,seriesGap=2;
   // If compare: 2 groups × 3 bars each; else 1 group × 3 bars
   const barsPerGroup=S.cmpActive?6:3;
   const grpW=barsPerGroup*bw+(barsPerGroup-1)*seriesGap+grpGap;
@@ -643,12 +775,12 @@ function renderYear(){
   const colors2=['#f59e0b','#ef4444','#ec4899'];
 
   // Build interactive bar chart with embedded data for tooltip
-  let svgBars=`<svg id="yearChart" viewBox="0 0 ${Math.max(780,totalW)} ${H}" style="min-width:${Math.max(780,totalW)}px;width:100%;display:block">`;
+  let svgBars=`<svg id="yearChart" viewBox="0 0 ${Math.max(420,totalW)} ${H}" style="min-width:${Math.max(420,totalW)}px;width:100%;display:block">`;
   
   // Y-axis lines
   for(let i=0;i<=4;i++){
     const y=top+(H-top-padB)*(1-i/4);
-    svgBars+=`<line x1="${padL}" y1="${y}" x2="${Math.max(780,totalW)-10}" y2="${y}" stroke="rgba(100,140,200,0.1)" stroke-width="1"/>`;
+    svgBars+=`<line x1="${padL}" y1="${y}" x2="${Math.max(420,totalW)-10}" y2="${y}" stroke="rgba(100,140,200,0.1)" stroke-width="1"/>`;
     const v=maxChartV*i/4;
     svgBars+=`<text x="${padL-4}" y="${y+3}" text-anchor="end" fill="#5a7099" font-size="8" font-family="monospace">${fb(v)}</text>`;
   }
@@ -676,11 +808,11 @@ function renderYear(){
         const bx=x+j*(bw+seriesGap);
         const by=H-padB-bh;
         const ttData=JSON.stringify({mo:cmpM.mo,yr:cmpYr,val:v,label:['Лимиты','БО','Касса'][j],cmpVal:[m.lim,m.bo,m.vyb][j],cmpYr:yr});
-        svgBars+=`<rect data-tt='${ttData.replace(/'/g,"&#39;")}' x="${bx+2}" y="${by}" width="${bw-4}" height="${bh}" rx="2" fill="${colors2[j]}" opacity="0.45" style="cursor:pointer;stroke:${colors2[j]};stroke-width:1" onmouseenter="barHover(event,this)" onmouseleave="hideTT()"/>`;
+        svgBars+=`<rect data-tt='${ttData.replace(/'/g,"&#39;")}' x="${bx+1}" y="${by}" width="${Math.max(3,bw-2)}" height="${bh}" rx="2" fill="${colors2[j]}" opacity="0.45" style="cursor:pointer;stroke:${colors2[j]};stroke-width:1" onmouseenter="barHover(event,this)" onmouseleave="hideTT()"/>`;
       });
     }
 
-    svgBars+=`<text x="${x+grpW/2-grpGap/2}" y="${H-8}" text-anchor="middle" fill="#5a7099" font-size="9" font-family="monospace">${MSH[parseInt(m.mo)]}</text>`;
+    svgBars+=`<text x="${x+grpW/2-grpGap/2}" y="${H-5}" text-anchor="middle" fill="#5a7099" font-size="8" font-family="monospace">${MSH[parseInt(m.mo)]}</text>`;
   });
 
   // Legend
@@ -688,8 +820,8 @@ function renderYear(){
     [[colors[0],`Лим ${yr}`],[colors[1],`БО ${yr}`],[colors[2],`Касса ${yr}`],[colors2[0],`Лим ${cmpYr}`],[colors2[1],`БО ${cmpYr}`],[colors2[2],`Касса ${cmpYr}`]]:
     [[colors[0],'Лимиты'],[colors[1],'Подтв. БО'],[colors[2],'Касса']];
   legItems.forEach(([c,l],i)=>{
-    svgBars+=`<rect x="${padL+i*105}" y="6" width="10" height="7" rx="2" fill="${c}" opacity="0.9"/>`;
-    svgBars+=`<text x="${padL+i*105+14}" y="13" fill="#8fa4c8" font-size="9" font-family="monospace">${l}</text>`;
+    svgBars+=`<rect x="${padL+i*72}" y="2" width="8" height="6" rx="2" fill="${c}" opacity="0.9"/>`;
+    svgBars+=`<text x="${padL+i*72+11}" y="8" fill="#8fa4c8" font-size="8" font-family="monospace">${l}</text>`;
   });
   svgBars+='</svg>';
 
@@ -704,10 +836,25 @@ function renderYear(){
     <select id="cmpYrSel" onchange="S.cmpYr=this.value;renderYear()">${cmpYrOptions}</select>
     <button class="cmp-toggle ${S.cmpActive?'on':''}" onclick="S.cmpActive=!S.cmpActive;renderYear()">${S.cmpActive?'▣ Сравнение включено':'▷ Включить сравнение'}</button>
     ${S.cmpActive?`<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Прозрачные — ${cmpYr}</span>`:''}
+    <span style="flex:1"></span>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer" title="Переключить тип диаграммы">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Круговая</span>
+      <div onclick="S.chartType=S.chartType==='bar'?'pie':'bar';renderYear()" style="width:40px;height:20px;background:${S.chartType==='pie'?'var(--accent)':'var(--surface)'};border:1px solid var(--border2);border-radius:10px;position:relative;transition:background .2s;cursor:pointer;flex-shrink:0">
+        <div style="position:absolute;top:2px;left:${S.chartType==='pie'?'20px':'2px'};width:14px;height:14px;background:${S.chartType==='pie'?'white':'var(--text3)'};border-radius:50%;transition:left .2s"></div>
+      </div>
+    </label>
   </div>
   <div class="chart-wrap">
-    <div class="chart-title">Столбчатая диаграмма: ${yr}${S.cmpActive?' vs '+cmpYr:''} · наведите на столбец для деталей</div>
-    <div class="chart-area" style="overflow-x:auto">${svgBars}</div>
+  <div class="chart-title">${S.chartType==='bar'?'Динамика за год (столбцы)':'Динамика за год (круговая)'}: ${yr} год${S.cmpActive?' и '+cmpYr+' год':''} [обновлено]</div>
+    <div class="chart-area" style="overflow-x:auto">${(()=>{
+  if(S.chartType==='bar') return svgBars;
+  const pieColors=['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899','#06b6d4','#84cc16','#a78bfa','#fb923c','#38bdf8','#4ade80'];
+  const pie1=buildPieSVG(yd.mos,`${yr} год`,pieColors);
+  const cmpColors=['#f59e0b','#ef4444','#ec4899','#38bdf8','#84cc16','#a78bfa','#3b82f6','#8b5cf6','#10b981','#06b6d4','#fb923c','#4ade80'];
+  const pie2=S.cmpActive&&cmpData?buildPieSVG(cmpData,`${cmpYr} год`,cmpColors):'';
+  if(pie2) return '<div style="display:grid;grid-template-columns:700px 700px;gap:16px;justify-content:center">'+pie1+pie2+'</div>';
+  return pie1;
+})()}</div>
   </div>
   <div class="mgrid">`;
 
@@ -1794,6 +1941,401 @@ function showFT(n, cx, cy){
   tip.style.top  = ty+'px';
 }
 function hideFT(){ const t=document.getElementById('flowTip'); if(t) t.classList.remove('show'); }
+
+
+
+
+// ===== SCENARIOS / WHAT-IF =====
+const WI = {
+  overrides: {},   // { 'rchb_idx': { limDelta: -0.10 } }
+  scenario: null,  // current scenario results
+  saved: [],       // saved scenarios list
+};
+
+function renderScenario(){
+  const w = document.getElementById('twrap');
+  document.getElementById('pgn').style.display='none';
+
+  if(!S.loaded || !S.data.рчб.length){
+    w.innerHTML=`<div class="sbox">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <p>Сначала сформируйте отчёт</p>
+      <span class="hint">Перейдите на вкладку РЧБ/Лимиты и нажмите «Сформировать отчёт»</span>
+    </div>`;
+    return;
+  }
+
+  // Compute baseline
+  const base = computeWI({});
+  const cur  = computeWI(WI.overrides);
+
+  w.innerHTML = buildScenarioHTML(base, cur);
+  bindScenarioEvents();
+}
+
+function computeWI(overrides){
+  // Apply overrides to a copy of the RCHB data
+  const rows = S.data.рчб.map((r, i)=>{
+    const ov = overrides[i] || {};
+    const limOrig = pm(r.limity);
+    const boOrig  = pm(r.bo);
+    const vybOrig = pm(r.vyb);
+    const limNew  = ov.limDelta != null ? limOrig*(1+ov.limDelta) : limOrig;
+    const boNew   = ov.boDelta  != null ? boOrig*(1+ov.boDelta)   : Math.min(boOrig, limNew);
+    const vybNew  = ov.vybDelta != null ? vybOrig*(1+ov.vybDelta) : Math.min(vybOrig, limNew);
+    return {...r, _limNew:limNew, _boNew:boNew, _vybNew:vybNew, _idx:i,
+            _changed: ov.limDelta!=null||ov.boDelta!=null||ov.vybDelta!=null};
+  });
+
+  // Group by KVR
+  const byKvr = {};
+  rows.forEach(r=>{
+    const k = r.kvr||'—';
+    if(!byKvr[k]) byKvr[k]={kvr:k,name:r.name_kvr||('КВР '+k),lim:0,bo:0,vyb:0,rows:[]};
+    byKvr[k].lim+=r._limNew; byKvr[k].bo+=r._boNew; byKvr[k].vyb+=r._vybNew;
+    byKvr[k].rows.push(r);
+  });
+
+  // Group by KCSR
+  const byKcsr = {};
+  rows.forEach(r=>{
+    const k = r.kcsr||'—';
+    if(!byKcsr[k]) byKcsr[k]={kcsr:k,name:r.name_kcsr||k,lim:0,bo:0,vyb:0};
+    byKcsr[k].lim+=r._limNew; byKcsr[k].bo+=r._boNew; byKcsr[k].vyb+=r._vybNew;
+  });
+
+  const totalLim = rows.reduce((s,r)=>s+r._limNew,0);
+  const totalBo  = rows.reduce((s,r)=>s+r._boNew,0);
+  const totalVyb = rows.reduce((s,r)=>s+r._vybNew,0);
+  const risks = computeRisks(rows, byKvr, byKcsr, totalLim);
+
+  return {rows, byKvr, byKcsr, totalLim, totalBo, totalVyb, risks};
+}
+
+function computeRisks(rows, byKvr, byKcsr, totalLim){
+  const risks = [];
+  // Risk 1: Касса > Лимиты
+  rows.forEach(r=>{
+    if(r._vybNew > r._limNew && r._limNew > 0)
+      risks.push({level:'critical', icon:'🔴', text:`Касса превышает лимиты по ${r.kcsr} (КВР ${r.kvr}): ${fb(r._vybNew)} > ${fb(r._limNew)}`, kvr:r.kvr, kcsr:r.kcsr});
+  });
+  // Risk 2: БО > Лимиты
+  rows.forEach(r=>{
+    if(r._boNew > r._limNew && r._limNew > 0)
+      risks.push({level:'critical', icon:'🔴', text:`Обязательства превышают лимиты: ${r.name_kcsr||r.kcsr}`, kvr:r.kvr, kcsr:r.kcsr});
+  });
+  // Risk 3: Освоение < 20%
+  Object.values(byKvr).forEach(g=>{
+    if(g.lim>0){
+      const pct = g.vyb/g.lim;
+      if(pct<0.2 && g.lim>1e6)
+        risks.push({level:'warn', icon:'🟡', text:`Низкое освоение (${Math.round(pct*100)}%) по КВР ${g.kvr} — ${g.name}: ${fb(g.vyb)} из ${fb(g.lim)}`, kvr:g.kvr});
+    }
+  });
+  // Risk 4: Отрицательный остаток
+  rows.forEach(r=>{
+    const ost = r._limNew - r._boNew;
+    if(ost < 0)
+      risks.push({level:'warn', icon:'🟡', text:`Отрицательный остаток лимитов: ${r.name_kcsr||r.kcsr} (${fb(ost)})`, kvr:r.kvr, kcsr:r.kcsr});
+  });
+  // Risk 5: Лимиты < 10% от общего (концентрация)
+  const kvrArr = Object.values(byKvr).sort((a,b)=>b.lim-a.lim);
+  if(kvrArr.length>0 && totalLim>0){
+    const top1share = kvrArr[0].lim/totalLim;
+    if(top1share>0.6)
+      risks.push({level:'info', icon:'🔵', text:`Концентрация: ${Math.round(top1share*100)}% лимитов сосредоточено в КВР ${kvrArr[0].kvr} (${kvrArr[0].name})`, kvr:kvrArr[0].kvr});
+  }
+  return risks;
+}
+
+function buildScenarioHTML(base, cur){
+  const hasOverrides = Object.keys(WI.overrides).length > 0;
+  const deltaLim = cur.totalLim - base.totalLim;
+  const deltaVyb = cur.totalVyb - base.totalVyb;
+
+  // KVR list for selects
+  const kvrOptions = [...new Set(S.data.рчб.map(r=>r.kvr||'—'))]
+    .map(k=>{const n=S.data.рчб.find(r=>r.kvr===k)?.name_kvr||k; return `<option value="${esc(k)}">${esc(k)} — ${esc(n)}</option>`;}).join('');
+
+  const kcsrOptions = [...new Set(S.data.рчб.map(r=>r.kcsr||'—'))]
+    .map(k=>{const n=S.data.рчб.find(r=>r.kcsr===k)?.name_kcsr||k; return `<option value="${esc(k)}">${esc(k.slice(0,12))} — ${esc(n.slice(0,28))}</option>`;}).join('');
+
+  // Risks HTML
+  const riskRows = cur.risks.length ? cur.risks.map(r=>`
+    <div class="wi-risk wi-risk-${r.level}">
+      <span class="wi-risk-icon">${r.icon}</span>
+      <span class="wi-risk-text">${esc(r.text)}</span>
+    </div>`).join('') : `<div class="wi-risk wi-risk-ok">✅ Рисков не обнаружено в текущем сценарии</div>`;
+
+  // KVR table
+  const kvrRows = Object.values(cur.byKvr).sort((a,b)=>b.lim-a.lim).map(g=>{
+    const baseG = base.byKvr[g.kvr]||{lim:0,vyb:0};
+    const dLim = g.lim - baseG.lim;
+    const dVyb = g.vyb - baseG.vyb;
+    const pct = g.lim>0?Math.round(g.vyb/g.lim*100):0;
+    const risk = g.vyb>g.lim?'berr':pct<20&&g.lim>1e6?'bwarn':'';
+    return `<tr class="${risk?'vrow':''}">
+      <td class="tc">${esc(g.kvr)}</td>
+      <td title="${esc(g.name)}" style="color:var(--text2)">${esc(g.name.slice(0,32))}</td>
+      <td class="tm">${fb(g.lim)}${dLim?`<span style="font-size:9px;color:${dLim<0?'var(--red)':'var(--green)'};margin-left:4px">${dLim>0?'+':''}${fb(dLim)}</span>`:''}</td>
+      <td class="tm">${fb(g.vyb)}${dVyb?`<span style="font-size:9px;color:${dVyb<0?'var(--red)':'var(--green)'};margin-left:4px">${dVyb>0?'+':''}${fb(dVyb)}</span>`:''}</td>
+      <td style="color:${pct>80?'var(--green)':pct>40?'var(--amber)':'var(--red)'};font-family:var(--mono);font-size:11px">${pct}%</td>
+      ${risk?`<td><span class="badge ${risk}" style="font-size:9px">${g.vyb>g.lim?'Превышение':'Низкое освоение'}</span></td>`:'<td>—</td>'}
+    </tr>`;
+  }).join('');
+
+  // Saved scenarios list
+  const savedHTML = WI.saved.length ? WI.saved.map((sc,i)=>`
+    <div class="wi-saved-item">
+      <span style="font-size:11px;color:var(--text2)">${esc(sc.name)}</span>
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">${fb(sc.totalLim)} лим · ${sc.risks} риск.</span>
+      <button class="row-xls-btn" onclick="loadSavedScenario(${i})">Загрузить</button>
+      <button class="row-xls-btn" style="border-color:rgba(248,113,113,.3);color:var(--red)" onclick="deleteSavedScenario(${i})">✕</button>
+    </div>`).join('') : '<div style="font-size:11px;color:var(--text3);padding:8px">Нет сохранённых сценариев</div>';
+
+  return `<div class="scenario-wrap">
+  <!-- Left panel: controls -->
+  <div class="scenario-left">
+
+    <div class="wi-section">
+      <div class="wi-section-title">⚡ Что будет, если...</div>
+      <div class="wi-desc">Измените параметры финансирования и система мгновенно пересчитает все показатели и риски.</div>
+
+      <div class="wi-form">
+        <div class="wi-row">
+          <label class="wi-label">Применить к</label>
+          <select id="wiTarget" class="wi-select">
+            <option value="kvr">КВР (тип закупки)</option>
+            <option value="kcsr">КЦСР (программа)</option>
+            <option value="all">Всем записям</option>
+          </select>
+        </div>
+        <div class="wi-row" id="wiKvrRow">
+          <label class="wi-label">КВР</label>
+          <select id="wiKvr" class="wi-select">${kvrOptions}</select>
+        </div>
+        <div class="wi-row" id="wiKcsrRow" style="display:none">
+          <label class="wi-label">КЦСР</label>
+          <select id="wiKcsr" class="wi-select">${kcsrOptions}</select>
+        </div>
+        <div class="wi-row">
+          <label class="wi-label">Показатель</label>
+          <select id="wiField" class="wi-select">
+            <option value="limDelta">Лимиты ПБС</option>
+            <option value="boDelta">Подтв. обязательства</option>
+            <option value="vybDelta">Выбытия (касса)</option>
+          </select>
+        </div>
+        <div class="wi-row">
+          <label class="wi-label">Изменение</label>
+          <div style="display:flex;gap:6px;align-items:center;flex:1">
+            <input type="range" id="wiSlider" min="-50" max="50" value="0"
+              style="flex:1;accent-color:var(--accent)"
+              oninput="document.getElementById('wiPct').value=this.value;applyWI()">
+            <input type="number" id="wiPct" value="0" min="-100" max="200"
+              style="width:60px;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:var(--r);font-family:var(--mono);font-size:12px;text-align:center"
+              oninput="document.getElementById('wiSlider').value=Math.max(-50,Math.min(50,this.value));applyWI()">
+            <span style="font-family:var(--mono);font-size:12px;color:var(--text3)">%</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="rbtn" style="flex:1;padding:8px" onclick="applyWI()">▶ Пересчитать</button>
+          <button class="ebtn" style="width:auto;padding:8px 12px" onclick="resetWI()">↺ Сброс</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input id="wiScenarioName" class="fi" placeholder="Название сценария..." style="flex:1">
+          <button class="ftbtn" onclick="saveScenario()" style="white-space:nowrap">💾 Сохранить</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="wi-section">
+      <div class="wi-section-title">📁 Сохранённые сценарии</div>
+      <div id="wiSaved">${savedHTML}</div>
+    </div>
+
+  </div>
+
+  <!-- Right panel: results -->
+  <div class="scenario-right">
+
+    <!-- KPI delta row -->
+    <div class="wi-kpi-row">
+      <div class="wi-kpi">
+        <div class="wi-kpi-label">Лимиты (сценарий)</div>
+        <div class="wi-kpi-val" id="wiK1">${fb(cur.totalLim)}</div>
+        ${hasOverrides?`<div class="wi-kpi-delta ${deltaLim<0?'neg':'pos'}">${deltaLim>0?'+':''}${fb(deltaLim)}</div>`:'<div class="wi-kpi-delta neu">—</div>'}
+      </div>
+      <div class="wi-kpi">
+        <div class="wi-kpi-label">БО (сценарий)</div>
+        <div class="wi-kpi-val" id="wiK2">${fb(cur.totalBo)}</div>
+        <div class="wi-kpi-delta neu">—</div>
+      </div>
+      <div class="wi-kpi">
+        <div class="wi-kpi-label">Касса (сценарий)</div>
+        <div class="wi-kpi-val" id="wiK3" style="color:var(--green)">${fb(cur.totalVyb)}</div>
+        ${hasOverrides?`<div class="wi-kpi-delta ${deltaVyb<0?'neg':'pos'}">${deltaVyb>0?'+':''}${fb(deltaVyb)}</div>`:'<div class="wi-kpi-delta neu">—</div>'}
+      </div>
+      <div class="wi-kpi">
+        <div class="wi-kpi-label">Рисков выявлено</div>
+        <div class="wi-kpi-val" id="wiK4" style="color:${cur.risks.filter(r=>r.level==='critical').length?'var(--red)':'var(--amber)'}">${cur.risks.length}</div>
+        <div class="wi-kpi-delta neu">${cur.risks.filter(r=>r.level==='critical').length} критических</div>
+      </div>
+    </div>
+
+    <!-- Risks -->
+    <div class="wi-section">
+      <div class="wi-section-title">🚨 Риски и предупреждения</div>
+      <div id="wiRisks">${riskRows}</div>
+    </div>
+
+    <!-- KVR table -->
+    <div class="wi-section">
+      <div class="wi-section-title">📊 По типам закупок (КВР)</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:auto">
+          <thead><tr>
+            <th style="background:var(--bg3);color:var(--text2);padding:8px 10px;font-family:var(--mono);font-size:10px;text-align:left;border-bottom:1px solid var(--border)">КВР</th>
+            <th style="background:var(--bg3);color:var(--text2);padding:8px 10px;font-family:var(--mono);font-size:10px;text-align:left;border-bottom:1px solid var(--border)">Наименование</th>
+            <th style="background:var(--bg3);color:var(--text2);padding:8px 10px;font-family:var(--mono);font-size:10px;text-align:right;border-bottom:1px solid var(--border)">Лимиты</th>
+            <th style="background:var(--bg3);color:var(--text2);padding:8px 10px;font-family:var(--mono);font-size:10px;text-align:right;border-bottom:1px solid var(--border)">Касса</th>
+            <th style="background:var(--bg3);color:var(--text2);padding:8px 10px;font-family:var(--mono);font-size:10px;text-align:right;border-bottom:1px solid var(--border)">% осв.</th>
+            <th style="background:var(--bg3);color:var(--text2);padding:8px 10px;font-family:var(--mono);font-size:10px;border-bottom:1px solid var(--border)">Статус</th>
+          </tr></thead>
+          <tbody id="wiKvrTable">${kvrRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>`;
+}
+
+function bindScenarioEvents(){
+  const tgt = document.getElementById('wiTarget');
+  if(tgt) tgt.addEventListener('change', ()=>{
+    const v = tgt.value;
+    document.getElementById('wiKvrRow').style.display  = v==='kvr'  ? '' : 'none';
+    document.getElementById('wiKcsrRow').style.display = v==='kcsr' ? '' : 'none';
+  });
+}
+
+function applyWI(){
+  const target = document.getElementById('wiTarget')?.value || 'kvr';
+  const pct    = parseFloat(document.getElementById('wiPct')?.value || 0) / 100;
+  const field  = document.getElementById('wiField')?.value || 'limDelta';
+  const kvr    = document.getElementById('wiKvr')?.value;
+  const kcsr   = document.getElementById('wiKcsr')?.value;
+
+  // Apply override to matching rows
+  S.data.рчб.forEach((r, i)=>{
+    let match = false;
+    if(target==='all') match = true;
+    else if(target==='kvr'  && r.kvr  === kvr)  match = true;
+    else if(target==='kcsr' && r.kcsr === kcsr) match = true;
+    if(match){
+      if(!WI.overrides[i]) WI.overrides[i] = {};
+      WI.overrides[i][field] = pct;
+    }
+  });
+
+  refreshScenario();
+}
+
+function resetWI(){
+  WI.overrides = {};
+  // Reset slider
+  const sl = document.getElementById('wiSlider');
+  const pctI = document.getElementById('wiPct');
+  if(sl) sl.value = 0;
+  if(pctI) pctI.value = 0;
+  refreshScenario();
+}
+
+function refreshScenario(){
+  const base = computeWI({});
+  const cur  = computeWI(WI.overrides);
+  const hasOv = Object.keys(WI.overrides).length > 0;
+
+  // Update KPI
+  if(document.getElementById('wiK1')) document.getElementById('wiK1').textContent = fb(cur.totalLim);
+  if(document.getElementById('wiK2')) document.getElementById('wiK2').textContent = fb(cur.totalBo);
+  if(document.getElementById('wiK3')) document.getElementById('wiK3').textContent = fb(cur.totalVyb);
+  if(document.getElementById('wiK4')){
+    const k4 = document.getElementById('wiK4');
+    k4.textContent = cur.risks.length;
+    k4.style.color = cur.risks.filter(r=>r.level==='critical').length ? 'var(--red)' : cur.risks.length>0 ? 'var(--amber)' : 'var(--green)';
+  }
+
+  // Update risks
+  const riskEl = document.getElementById('wiRisks');
+  if(riskEl){
+    riskEl.innerHTML = cur.risks.length
+      ? cur.risks.map(r=>`<div class="wi-risk wi-risk-${r.level}"><span class="wi-risk-icon">${r.icon}</span><span class="wi-risk-text">${esc(r.text)}</span></div>`).join('')
+      : '<div class="wi-risk wi-risk-ok">✅ Рисков не обнаружено в текущем сценарии</div>';
+  }
+
+  // Update KVR table
+  const kvrTbl = document.getElementById('wiKvrTable');
+  if(kvrTbl){
+    const kvrRows = Object.values(cur.byKvr).sort((a,b)=>b.lim-a.lim).map(g=>{
+      const baseG = base.byKvr[g.kvr]||{lim:0,vyb:0};
+      const dLim  = g.lim - baseG.lim;
+      const dVyb  = g.vyb - baseG.vyb;
+      const pct   = g.lim>0 ? Math.round(g.vyb/g.lim*100) : 0;
+      const risk  = g.vyb>g.lim ? 'berr' : pct<20&&g.lim>1e6 ? 'bwarn' : '';
+      return `<tr class="${risk?'vrow':''}">
+        <td class="tc">${esc(g.kvr)}</td>
+        <td style="color:var(--text2);padding:6px 10px">${esc(g.name.slice(0,32))}</td>
+        <td class="tm">${fb(g.lim)}${dLim?`<span style="font-size:9px;color:${dLim<0?'var(--red)':'var(--green)'};margin-left:4px">${dLim>0?'+':''}${fb(dLim)}</span>`:''}</td>
+        <td class="tm">${fb(g.vyb)}${dVyb?`<span style="font-size:9px;color:${dVyb<0?'var(--red)':'var(--green)'};margin-left:4px">${dVyb>0?'+':''}${fb(dVyb)}</span>`:''}</td>
+        <td style="color:${pct>80?'var(--green)':pct>40?'var(--amber)':'var(--red)'};font-family:var(--mono);font-size:11px;padding:6px 10px;text-align:right">${pct}%</td>
+        <td style="padding:6px 10px">${risk?`<span class="badge ${risk}" style="font-size:9px">${g.vyb>g.lim?'Превышение':'Низкое освоение'}</span>`:'<span style="color:var(--green);font-size:11px">✓</span>'}</td>
+      </tr>`;
+    }).join('');
+    kvrTbl.innerHTML = kvrRows;
+  }
+}
+
+function saveScenario(){
+  const name = document.getElementById('wiScenarioName')?.value.trim() || `Сценарий ${WI.saved.length+1}`;
+  const cur = computeWI(WI.overrides);
+  WI.saved.push({
+    name, overrides:{...WI.overrides},
+    totalLim:cur.totalLim, totalVyb:cur.totalVyb, risks:cur.risks.length
+  });
+  document.getElementById('wiScenarioName').value='';
+  const el = document.getElementById('wiSaved');
+  if(el) el.innerHTML = WI.saved.map((sc,i)=>`
+    <div class="wi-saved-item">
+      <span style="font-size:11px;color:var(--text2)">${esc(sc.name)}</span>
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">${fb(sc.totalLim)} · ${sc.risks} риск.</span>
+      <button class="row-xls-btn" onclick="loadSavedScenario(${i})">Загрузить</button>
+      <button class="row-xls-btn" style="border-color:rgba(248,113,113,.3);color:var(--red)" onclick="deleteSavedScenario(${i})">✕</button>
+    </div>`).join('');
+  showT('Сценарий сохранён: '+name,'success');
+}
+
+function loadSavedScenario(i){
+  const sc = WI.saved[i];
+  if(!sc) return;
+  WI.overrides = {...sc.overrides};
+  refreshScenario();
+  showT('Сценарий загружен: '+sc.name,'success');
+}
+
+function deleteSavedScenario(i){
+  WI.saved.splice(i,1);
+  const el = document.getElementById('wiSaved');
+  if(el) el.innerHTML = WI.saved.length ? WI.saved.map((sc,j)=>`
+    <div class="wi-saved-item">
+      <span style="font-size:11px;color:var(--text2)">${esc(sc.name)}</span>
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">${fb(sc.totalLim)} · ${sc.risks} риск.</span>
+      <button class="row-xls-btn" onclick="loadSavedScenario(${j})">Загрузить</button>
+      <button class="row-xls-btn" style="border-color:rgba(248,113,113,.3);color:var(--red)" onclick="deleteSavedScenario(${j})">✕</button>
+    </div>`).join('') : '<div style="font-size:11px;color:var(--text3);padding:8px">Нет сохранённых сценариев</div>';
+}
+
 
 function showT(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');setTimeout(()=>t.className='toast',2600);}
 </script>
