@@ -71,25 +71,6 @@ https://grand-sawine-becd23.netlify.app/
 | ГЗ         | Государственные закупки |
 
 
-## 🚀 Быстрый старт
-
-```bash
-# 1. Склонировать репозиторий
-git clone https://github.com/your-username/fincontur.git
-
-# 2. Перейти в папку
-cd fincontur
-
-# 3. Открыть приложение
-index.html
-```
-
-или:
-
-```bash
-python -m http.server
-```
-
 ## 🏗️ Стек технологий
 
 * **Frontend:** HTML5, CSS3, Vanilla JS
@@ -108,6 +89,7 @@ python -m http.server
 └── README.md
 ```
 
+
 ## 🎯 Как использовать
 
 1. Выбери период (месяц или год)
@@ -115,6 +97,7 @@ python -m http.server
 3. Примените фильтры
 4. Нажми **«Сформировать отчёт»**
 5. Анализируй или экспортируй результат
+
 
 ## ⚠️ Кейсы применения
 
