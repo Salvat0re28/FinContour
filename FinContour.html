@@ -7,6 +7,10 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@400;600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.min.js"></script>
 <style>
 :root{--bg:#0e1117;--bg2:#151b27;--bg3:#1c2438;--surface:#1e2840;--surface2:#243050;--border:rgba(100,140,200,0.15);--border2:rgba(100,140,200,0.28);--text:#e8edf8;--text2:#8fa4c8;--text3:#5a7099;--accent:#4a8fff;--accent2:#2563d4;--green:#34d399;--red:#f87171;--amber:#fbbf24;--teal:#5eead4;--purple:#a78bfa;--mono:'IBM Plex Mono',monospace;--sans:'Source Sans 3',sans-serif;--serif:'Playfair Display',serif;--r:6px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -303,6 +307,9 @@ tbody td:first-child{color:var(--text);font-weight:500}
     <button class="ebtn" id="eBtn" onclick="doExport()" disabled>
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>Выгрузить Excel
     </button>
+    <button class="ebtn" id="pBtn" onclick="doExportPDFAll()" disabled>
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>Выгрузить PDF
+    </button>
   </div>
 </aside>
 <main>
@@ -530,6 +537,7 @@ function setMode(m){
   document.getElementById('secYear').style.display=m==='year'?'':'none';
   document.getElementById('ytab').style.display=m==='year'?'':'none';
   document.getElementById('eBtn').disabled=true;
+  document.getElementById('pBtn').disabled=true;
   document.getElementById('twrap').innerHTML='<div class="sbox"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><p>Нажмите «Сформировать отчёт» или Enter</p></div>';
   document.getElementById('pgn').style.display='none';
   document.getElementById('metaFooter').style.display='none';
@@ -588,6 +596,7 @@ function loadData(){
     updKPI();
     swTab(S.tab,document.querySelector('.tab.active'));
     document.getElementById('eBtn').disabled=false;
+    document.getElementById('pBtn').disabled=false;
     updMeta();
     showT('Данные загружены','success');
   },400);
@@ -845,7 +854,7 @@ function renderYear(){
     </label>
   </div>
   <div class="chart-wrap">
-  <div class="chart-title">${S.chartType==='bar'?'Динамика за год (столбцы)':'Динамика за год (круговая)'}: ${yr} год${S.cmpActive?' и '+cmpYr+' год':''} [обновлено]</div>
+  <div class="chart-title">${S.chartType==='bar'?'Динамика за год (столбцы)':'Динамика за год (круговая)'}: ${yr} год${S.cmpActive?' и '+cmpYr+' год':''}</div>
     <div class="chart-area" style="overflow-x:auto">${(()=>{
   if(S.chartType==='bar') return svgBars;
   const pieColors=['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899','#06b6d4','#84cc16','#a78bfa','#fb923c','#38bdf8','#4ade80'];
@@ -1323,6 +1332,184 @@ function doExport(){
   }
 }
 
+function doExportPDFAll(){
+  if(!S.loaded){showT('Нет данных','error');return;}
+  if(!window.pdfMake){showT('PDF библиотека не загружена','error');return;}
+
+  const isY=S.mode==='year';
+  const periodLabel=isY
+    ? `Год: ${document.getElementById('yonly').value}`
+    : `Месяц: ${MRU[parseInt(document.getElementById('msel').value)]} ${document.getElementById('ysel').value}`;
+  const now=new Date();
+  const nowStr=now.toLocaleString('ru-RU');
+  const user=document.getElementById('metaUser').value||'—';
+  const fl=isY?`год_${document.getElementById('yonly').value}`:(()=>{const m=document.getElementById('msel').value;const y=document.getElementById('ysel').value;return `${y}${m}`;})();
+
+  const lim=S.data.рчб.reduce((s,r)=>s+pm(r.limity),0);
+  const bo=S.data.рчб.reduce((s,r)=>s+pm(r.bo),0);
+  const vyb=S.data.буау.reduce((s,r)=>s+pm(r.vyplaty),0);
+  const riskRows=S.data.рчб.map(r=>{
+    const limV=pm(r.limity), kasV=pm(r.vyb), boV=pm(r.bo);
+    const perf=limV>0?Math.round(kasV/limV*100):0;
+    return {budget:r.budget||'—', program:r.name_kcsr||r.kcsr||'—', kvr:r.kvr||'—', lim:limV, kas:kasV, bo:boV, perf};
+  }).filter(r=>r.lim>0);
+  const redRisks=riskRows.filter(r=>r.perf<50);
+  const yellowRisks=riskRows.filter(r=>r.perf>=50&&r.perf<80);
+  const redLim=redRisks.reduce((s,r)=>s+r.lim,0);
+  const yellowLim=yellowRisks.reduce((s,r)=>s+r.lim,0);
+  const reserveTarget=Math.round(redLim*0.12+yellowLim*0.05);
+  const topRiskRows=[...riskRows].sort((a,b)=>(a.perf-b.perf)||(b.lim-a.lim)).slice(0,8);
+
+  const content=[
+    {text:'ФинКонтур - Полный отчет', style:'h1'},
+    {text:`Период: ${periodLabel}`, style:'meta'},
+    {text:`Сформировано: ${user} · ${nowStr}`, style:'meta', margin:[0,0,0,8]},
+    {text:'Риски и управленческие решения', style:'h2'},
+    {
+      table:{
+        headerRows:1,
+        widths:[240,110],
+        body:[
+          ['Показатель','Значение'],
+          ['Красные риски (<50% кассового исполнения)', String(redRisks.length)],
+          ['Желтые риски (50-79% кассового исполнения)', String(yellowRisks.length)],
+          ['Лимиты в красной зоне', fb(redLim)],
+          ['Лимиты в желтой зоне', fb(yellowLim)],
+          ['Рекомендуемый резерв перераспределения', fb(reserveTarget)]
+        ]
+      },
+      layout:'lightHorizontalLines',
+      margin:[0,4,0,8]
+    },
+    {
+      ul:[
+        redRisks.length
+          ? 'Для красной зоны: приоритетно перераспределить лимиты на критичные направления с подтвержденными обязательствами и низкой кассой.'
+          : 'Красная зона не выявлена: перераспределение возможно в плановом режиме.',
+        yellowRisks.length
+          ? 'Для желтой зоны: усилить недельный контроль контрактования и кассовых выплат, подтвердить графики исполнения.'
+          : 'Желтая зона не выявлена.',
+        'Провести адресную сверку по КЦСР/КВР и закрепить ответственных с контрольными сроками по каждому рисковому направлению.'
+      ],
+      margin:[0,0,0,10]
+    },
+    {text:'Приоритетные направления (риск-профиль)', style:'h2'},
+    {
+      table:{
+        headerRows:1,
+        widths:[120,210,55,90,90,60],
+        body:[
+          ['Бюджет','Программа','КВР','Лимиты','Касса','%'],
+          ...topRiskRows.map(r=>[r.budget,r.program,r.kvr,fb(r.lim),fb(r.kas),`${r.perf}%`])
+        ]
+      },
+      layout:'lightHorizontalLines',
+      margin:[0,4,0,10]
+    },
+    {text:'Сводные показатели', style:'h2'},
+    {
+      table:{
+        headerRows:1,
+        widths:[220,120],
+        body:[
+          ['Показатель','Значение'],
+          ['Лимиты ПБС',fb(lim)],
+          ['Подтвержденные обязательства',fb(bo)],
+          ['Касса (выплаты)',fb(vyb)],
+          ['% исполнения лимитов',lim>0?`${(vyb/lim*100).toFixed(1)}%`:'—'],
+          ['Нарушений контроля',String(S.viol)]
+        ]
+      },
+      layout:'lightHorizontalLines',
+      margin:[0,4,0,10]
+    },
+    {text:'РЧБ / Лимиты', style:'h2'},
+    {
+      table:{
+        headerRows:1,
+        widths:[130,62,70,120,44,110,70],
+        body:[
+          ['Бюджет','Дата','КЦСР','Мероприятие','КВР','Лимиты','Касса'],
+          ...S.data.рчб.slice(0,250).map(d=>[d.budget,d.date,d.kcsr,d.name_kcsr,d.kvr,d.limity,d.vyb])
+        ]
+      },
+      layout:'lightHorizontalLines',
+      margin:[0,4,0,10]
+    }
+  ];
+
+  if(S.data.сог.length){
+    content.push(
+      {text:'Соглашения', style:'h2'},
+      {
+        table:{
+          headerRows:1,
+          widths:[130,65,70,150,70,70],
+          body:[
+            ['Бюджет','Дата','Рег. номер','Получатель','КЦСР','Сумма'],
+            ...S.data.сог.slice(0,250).map(d=>[d.bname,d.date,d.reg,d.recip,d.kcsr,d.amount])
+          ]
+        },
+        layout:'lightHorizontalLines',
+        margin:[0,4,0,10]
+      }
+    );
+  }
+
+  content.push(
+    {text:'БУАУ / Касса', style:'h2'},
+    {
+      table:{
+        headerRows:1,
+        widths:[130,62,70,44,70,120],
+        body:[
+          ['Бюджет','Дата','КЦСР','КВР','Выплаты','Организация'],
+          ...S.data.буау.slice(0,250).map(d=>[d.budget,d.date,d.kcsr,d.kvr,d.vyplaty,d.org])
+        ]
+      },
+      layout:'lightHorizontalLines',
+      margin:[0,4,0,10]
+    }
+  );
+
+  if(isY&&S.yd){
+    content.push(
+      {text:'Динамика за год', style:'h2'},
+      {
+        table:{
+          headerRows:1,
+          widths:[70,90,90,90,90],
+          body:[
+            ['Месяц','Лимиты','БО','Касса','Нарушения'],
+            ...S.yd.mos.map(m=>[MRU[parseInt(m.mo)],fb(m.lim),fb(m.bo),fb(m.vyb),String(m.viol)])
+          ]
+        },
+        layout:'lightHorizontalLines'
+      }
+    );
+  }
+
+  const docDefinition={
+    pageOrientation:'landscape',
+    pageMargins:[24,20,24,20],
+    content,
+    styles:{
+      h1:{fontSize:16,bold:true,color:'#102a43'},
+      h2:{fontSize:12,bold:true,color:'#243b53'},
+      meta:{fontSize:9,color:'#486581'}
+    },
+    defaultStyle:{fontSize:8}
+  };
+
+  try{
+    window.pdfMake.createPdf(docDefinition).download(`ФинКонтур_${fl}.pdf`);
+    showT('PDF отчёт сохранён','success');
+  }catch(err){
+    console.error('PDF export error:',err);
+    showT('Ошибка выгрузки PDF: '+(err.message||err),'error');
+  }
+}
+
 async function injectChartAndSave(wb,fl){
   try{
     const {chartXml,drawingXml,sheetName}=wb._chartData;
@@ -1586,6 +1773,7 @@ function renderFlow(){
     <button class="ftbtn" id="fmBoth" onclick="setFM('both',this)">Оба</button>
     <span style="flex:1"></span>
     <span id="flowStats" style="font-family:var(--mono);font-size:10px;color:var(--text3)"></span>
+    <button class="ftbtn" onclick="exportFlowSelectionPDF()">PDF выбранных линий</button>
     <button class="ftbtn" onclick="FS.scale=Math.min(FS.scale*1.2,4);drawFlow()">＋</button>
     <button class="ftbtn" onclick="FS.scale=Math.max(FS.scale/1.2,0.2);drawFlow()">−</button>
     <button class="ftbtn" onclick="FS.pan={x:0,y:0};FS.scale=1;drawFlow()">⟲ Сброс</button>
@@ -1941,6 +2129,236 @@ function showFT(n, cx, cy){
   tip.style.top  = ty+'px';
 }
 function hideFT(){ const t=document.getElementById('flowTip'); if(t) t.classList.remove('show'); }
+
+function flowModeValue(obj){
+  if(!obj) return 0;
+  if(FS.mode==='kas') return obj.kas||0;
+  if(FS.mode==='both') return ((obj.lim||0)+(obj.kas||0))/2;
+  return obj.lim||0;
+}
+
+function buildFlowPathRows(graph, selectedNode){
+  const nodeById = new Map(graph.nodes.map(n=>[n.id,n]));
+  const linkByKey = new Map(graph.links.map(l=>[`${l.src}->${l.tgt}`, l]));
+  const outMap = new Map();
+  const inMap = new Map();
+  graph.links.forEach(l=>{
+    if(!outMap.has(l.src)) outMap.set(l.src, []);
+    if(!inMap.has(l.tgt)) inMap.set(l.tgt, []);
+    outMap.get(l.src).push(l);
+    inMap.get(l.tgt).push(l);
+  });
+
+  function collectLeft(nodeId){
+    const node = nodeById.get(nodeId);
+    if(!node) return [];
+    if(node.col===0) return [[nodeId]];
+    const incoming = (inMap.get(nodeId)||[]).filter(l=>(nodeById.get(l.src)||{}).col===node.col-1);
+    if(!incoming.length) return [[nodeId]];
+    const rows = [];
+    incoming.forEach(l=>collectLeft(l.src).forEach(path=>rows.push([...path, nodeId])));
+    return rows;
+  }
+
+  function collectRight(nodeId){
+    const node = nodeById.get(nodeId);
+    if(!node) return [];
+    if(node.col===3) return [[nodeId]];
+    const outgoing = (outMap.get(nodeId)||[]).filter(l=>(nodeById.get(l.tgt)||{}).col===node.col+1);
+    if(!outgoing.length) return [[nodeId]];
+    const rows = [];
+    outgoing.forEach(l=>collectRight(l.tgt).forEach(path=>rows.push([nodeId, ...path.slice(1)])));
+    return rows;
+  }
+
+  const left = collectLeft(selectedNode.id);
+  const right = collectRight(selectedNode.id);
+  const rows = [];
+
+  left.forEach(lp=>{
+    right.forEach(rp=>{
+      const fullIds = [...lp, ...rp.slice(1)];
+      const cols = [null,null,null,null];
+      fullIds.forEach(id=>{
+        const n = nodeById.get(id);
+        if(n) cols[n.col] = n;
+      });
+
+      let limPath = Number.POSITIVE_INFINITY;
+      let kasPath = Number.POSITIVE_INFINITY;
+      for(let i=0;i<fullIds.length-1;i++){
+        const edge = linkByKey.get(`${fullIds[i]}->${fullIds[i+1]}`);
+        if(!edge) continue;
+        limPath = Math.min(limPath, edge.lim||0);
+        kasPath = Math.min(kasPath, edge.kas||0);
+      }
+      if(!isFinite(limPath)) limPath = 0;
+      if(!isFinite(kasPath)) kasPath = 0;
+
+      rows.push({
+        source: cols[0]?.fullLabel || cols[0]?.label || '—',
+        budget: cols[1]?.fullLabel || cols[1]?.label || '—',
+        program: cols[2]?.fullLabel || cols[2]?.label || '—',
+        kvr: cols[3]?.fullLabel || cols[3]?.label || '—',
+        lim: limPath,
+        kas: kasPath
+      });
+    });
+  });
+
+  const uniq = new Map();
+  rows.forEach(r=>{
+    const key = `${r.source}|${r.budget}|${r.program}|${r.kvr}`;
+    if(!uniq.has(key) || flowModeValue(r)>flowModeValue(uniq.get(key))) uniq.set(key, r);
+  });
+  return [...uniq.values()].sort((a,b)=>flowModeValue(b)-flowModeValue(a)).slice(0,120);
+}
+
+function exportFlowSelectionPDF(){
+  if(!FS.graph){
+    showT('Сначала откройте вкладку "Поток средств".','error');
+    return;
+  }
+  if(!window.pdfMake){
+    showT('PDF библиотека не загружена.','error');
+    return;
+  }
+  const selectedNode = FS.clicked || FS.hovered;
+  if(!selectedNode){
+    showT('Кликните по узлу, чтобы выбрать линии для PDF.','error');
+    return;
+  }
+
+  const g = FS.graph;
+  const nodes = new Map(g.nodes.map(n=>[n.id,n]));
+  const selectedLinks = g.links.filter(l=>l.src===selectedNode.id || l.tgt===selectedNode.id);
+  if(!selectedLinks.length){
+    showT('Для выбранного узла нет связанных линий.','error');
+    return;
+  }
+
+  const pathRows = buildFlowPathRows(g, selectedNode);
+  const srcFilterLabel = ({all:'Все источники',fed:'Федеральные',reg:'Региональные',mun:'Муниципальные'})[(document.getElementById('flowSrc')||{value:'all'}).value] || 'Все источники';
+  const modeLabel = ({lim:'Лимиты',kas:'Касса',both:'Оба'})[FS.mode] || 'Лимиты';
+  const now = new Date();
+  const dateStr = now.toLocaleString('ru-RU');
+  const lineRowsRaw = selectedLinks
+    .sort((a,b)=>flowModeValue(b)-flowModeValue(a))
+    .map(l=>{
+      const src = nodes.get(l.src);
+      const tgt = nodes.get(l.tgt);
+      const lim = l.lim||0;
+      const kas = l.kas||0;
+      const perfNum = lim>0 ? Math.round((kas/lim)*100) : 0;
+      return {
+        src: src?.fullLabel || src?.label || l.src,
+        tgt: tgt?.fullLabel || tgt?.label || l.tgt,
+        lim, kas, perfNum,
+        perf: lim>0 ? `${perfNum}%` : '—'
+      };
+    });
+
+  const pathRowsRaw = pathRows.map(r=>{
+    const perfNum = r.lim>0 ? Math.round((r.kas/r.lim)*100) : 0;
+    return {...r, perfNum, perf: r.lim>0 ? `${perfNum}%` : '—'};
+  });
+
+  const redRisks = pathRowsRaw.filter(r=>r.lim>0 && r.perfNum<50);
+  const yellowRisks = pathRowsRaw.filter(r=>r.lim>0 && r.perfNum>=50 && r.perfNum<80);
+  const redLim = redRisks.reduce((s,r)=>s+r.lim,0);
+  const yellowLim = yellowRisks.reduce((s,r)=>s+r.lim,0);
+  const reserveTarget = Math.round((redLim*0.12 + yellowLim*0.05));
+  const underperfTop = [...pathRowsRaw]
+    .filter(r=>r.lim>0)
+    .sort((a,b)=>(a.perfNum-b.perfNum) || (b.lim-a.lim))
+    .slice(0,5);
+
+  const greeting = `Здравствуйте! Ниже представлен аналитический отчет по выбранным линиям узла «${selectedNode.fullLabel||selectedNode.label||selectedNode.id}». Документ включает оценку рисков, рекомендации и предложения по перераспределению бюджета.`;
+  const riskSummary = `Красные риски (<50% кассового исполнения): ${redRisks.length}. Желтые риски (50-79%): ${yellowRisks.length}.`;
+  const recommendations = [
+    redRisks.length ? 'Для красной зоны: срочно уточнить причины кассового разрыва, пересмотреть график закупок и календарь контрактования.' : 'Красная зона не выявлена.',
+    yellowRisks.length ? 'Для желтой зоны: усилить еженедельный контроль исполнения, проверить узкие места согласования документов и лимитов.' : 'Желтая зона не выявлена.',
+    'Провести сверку лимитов и кассовых выплат по каждому проблемному пути и назначить ответственных по срокам.'
+  ];
+  const budgetConclusion = [
+    `Суммарный объем потенциально рискованных лимитов: ${fb(redLim+yellowLim)} (красная зона: ${fb(redLim)}, желтая зона: ${fb(yellowLim)}).`,
+    `Рекомендуемый резерв для управляемого перераспределения: ${fb(reserveTarget)}.`,
+    'Приоритет перераспределения: сначала закрыть кассовые разрывы в красной зоне, затем поддержать направления желтой зоны с высокой социальной значимостью.'
+  ];
+
+  const docDefinition = {
+    pageOrientation: 'landscape',
+    pageMargins: [28, 24, 28, 24],
+    content: [
+      {text:'ФинКонтур - Отчет по выбранным линиям аналитики', style:'h1'},
+      {text:`Дата: ${dateStr}`, style:'meta'},
+      {text:greeting, margin:[0,8,0,8]},
+      {text:`Параметры: фильтр источника — ${srcFilterLabel}; режим — ${modeLabel}; связанных линий — ${lineRowsRaw.length}; аналитических путей — ${pathRowsRaw.length}.`, style:'meta'},
+      {text:'Риски', style:'h2', margin:[0,12,0,4]},
+      {text:riskSummary, margin:[0,0,0,6]},
+      {
+        ul: recommendations.map(t=>({text:t})),
+        margin:[0,0,0,10]
+      },
+      {text:'Таблица выбранных линий', style:'h2'},
+      {
+        table:{
+          headerRows:1,
+          widths:[200,200,80,80,70],
+          body:[
+            ['Откуда','Куда','Лимиты','Касса','% кассы'],
+            ...lineRowsRaw.map(r=>[r.src,r.tgt,fb(r.lim),fb(r.kas),r.perf])
+          ]
+        },
+        layout:'lightHorizontalLines',
+        margin:[0,4,0,10]
+      },
+      {text:'Таблица аналитических путей', style:'h2'},
+      {
+        table:{
+          headerRows:1,
+          widths:[110,130,180,135,75,75,55],
+          body:[
+            ['Источник','Бюджет / ПБС','Программа (КЦСР)','Тип закупки (КВР)','Лимиты','Касса','%'],
+            ...pathRowsRaw.map(r=>[r.source,r.budget,r.program,r.kvr,fb(r.lim),fb(r.kas),r.perf])
+          ]
+        },
+        layout:'lightHorizontalLines'
+      },
+      {text:'Вывод и предложения по распределению бюджета', style:'h2', margin:[0,12,0,4]},
+      {
+        ul: budgetConclusion.map(t=>({text:t})),
+        margin:[0,0,0,8]
+      },
+      {
+        text:'Приоритетные направления для корректировки (топ-5 по низкому исполнению):',
+        style:'meta',
+        margin:[0,0,0,4]
+      },
+      {
+        table:{
+          headerRows:1,
+          widths:[130,210,145,80,80,55],
+          body:[
+            ['Источник','Программа (КЦСР)','Тип закупки (КВР)','Лимиты','Касса','%'],
+            ...underperfTop.map(r=>[r.source,r.program,r.kvr,fb(r.lim),fb(r.kas),r.perf])
+          ]
+        },
+        layout:'lightHorizontalLines'
+      }
+    ],
+    styles:{
+      h1:{fontSize:16,bold:true,color:'#102a43'},
+      h2:{fontSize:12,bold:true,color:'#243b53'},
+      meta:{fontSize:9,color:'#486581'}
+    },
+    defaultStyle:{fontSize:9}
+  };
+
+  const fname = `ФинКонтур_поток_${(selectedNode.label||'узел').replace(/[^\wа-яА-Я\-]+/g,'_')}_${now.toISOString().slice(0,10)}.pdf`;
+  window.pdfMake.createPdf(docDefinition).download(fname);
+  showT('PDF по выбранным линиям сохранен.','success');
+}
 
 
 
